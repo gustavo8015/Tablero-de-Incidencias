@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablero de Incidencias de Vehículos Eléctricos</title>
+<style>
+/* ===========================================================
+   Tablero de Incidencias de Vehículos Eléctricos - estilos
+   =========================================================== */
+:root{
+  --bg:#f4f6f8;
+  --surface:#ffffff;
+  --border:#e2e6ea;
+  --text:#1c2530;
+  --muted:#68717d;
+  --brand:#0f6e5c;
+  --brand-soft:#e6f2ef;
+  --alta:#c94a45;
+  --media:#c98a12;
+  --baja:#2f8f6b;
+  --azul:#3a6ea5;
+  --violeta:#6a5acd;
+  --radius:12px;
+  --shadow:0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.06);
+  font-synthesis:none;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.45; font-size:14px;
+}
+
+/* ---------- Encabezado ---------- */
+header.topbar{
+  background:linear-gradient(100deg,#0d4f45 0%,#0f6e5c 55%,#17997c 100%);
+  color:#fff; padding:20px 28px;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
+}
+.topbar h1{font-size:21px; font-weight:650; letter-spacing:.2px}
+.topbar .sub{font-size:12.5px; opacity:.85; margin-top:3px}
+.badge-conn{
+  background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.28);
+  padding:7px 13px; border-radius:999px; font-size:12px; display:flex; align-items:center; gap:8px;
+}
+.dot{width:8px;height:8px;border-radius:50%;background:#7ee2b8;box-shadow:0 0 0 3px rgba(126,226,184,.25)}
+
+main{padding:22px 28px 40px; max-width:1400px; margin:0 auto}
+
+/* ---------- Tarjetas KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.kpi{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 18px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--brand)}
+.kpi.pend::before{background:var(--media)}
+.kpi.alta::before{background:var(--alta)}
+.kpi.ok::before{background:var(--baja)}
+.kpi .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.kpi .value{font-size:32px;font-weight:680;margin-top:6px;line-height:1.1}
+.kpi .hint{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* ---------- Paneles ---------- */
+.panel{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:20px;
+}
+.panel-head{
+  padding:14px 18px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+}
+.panel-head h2{font-size:15px;font-weight:640}
+.panel-head .desc{font-size:12px;color:var(--muted);margin-top:2px}
+.panel-body{padding:18px}
+
+/* ---------- Gráficos ---------- */
+.charts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px}
+.chart-card h3{font-size:13.5px;font-weight:640;margin-bottom:2px}
+.chart-card .desc{font-size:11.5px;color:var(--muted);margin-bottom:12px}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:12px}
+.legend span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.bar-row{display:grid;grid-template-columns:118px 1fr 34px;align-items:center;gap:10px;margin-bottom:9px;font-size:12px}
+.bar-track{background:#eef1f4;border-radius:5px;height:16px;overflow:hidden}
+.bar-fill{display:block;height:100%;border-radius:5px}
+.bar-row .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:620;color:var(--muted)}
+
+/* ---------- Filtros ---------- */
+.filtros{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.campo{display:flex;flex-direction:column;gap:5px}
+.campo label{font-size:11.5px;font-weight:620;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+select,input[type=text],input[type=date],textarea{
+  font:inherit;padding:8px 10px;border:1px solid var(--border);border-radius:8px;
+  background:#fff;color:var(--text);min-width:160px;
+}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:var(--brand)}
+.btn{
+  font:inherit;font-weight:620;border:1px solid transparent;border-radius:8px;
+  padding:9px 16px;cursor:pointer;background:var(--brand);color:#fff;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn.sec{background:#fff;color:var(--text);border-color:var(--border)}
+.btn.sec:hover{background:#f2f4f6;filter:none}
+
+/* ---------- Tabla ---------- */
+.tabla-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{
+  text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--muted);background:#fafbfc;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;
+}
+tbody td{padding:10px 12px;border-bottom:1px solid #f0f2f4;vertical-align:top}
+tbody tr:hover{background:#fafbfc}
+td.desc{max-width:300px;color:var(--muted);font-size:12.5px}
+.placa{font-weight:640;font-family:"Consolas",monospace;letter-spacing:.5px}
+.chip{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:620;white-space:nowrap}
+.chip.Alta{background:#fbeaea;color:var(--alta)}
+.chip.Media{background:#fdf3de;color:var(--media)}
+.chip.Baja{background:#e7f4ee;color:var(--baja)}
+.chip.Pendiente{background:#fbeaea;color:var(--alta)}
+.chip.Enproceso{background:#fdf3de;color:var(--media)}
+.chip.Solucionada{background:#e7f4ee;color:var(--baja)}
+.vacio{text-align:center;color:var(--muted);padding:34px;font-size:13px}
+.acciones{display:flex;gap:6px}
+.mini{font:inherit;font-size:11.5px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;color:var(--text)}
+.mini:hover{background:#f2f4f6}
+
+/* ---------- Modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(16,24,40,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:620px;box-shadow:0 20px 50px rgba(16,24,40,.25);max-height:92vh;overflow:auto}
+.modal header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal header h2{font-size:16px}
+.modal .cerrar{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1}
+.form-grid{padding:20px 22px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid .full{grid-column:1/-1}
+.form-grid .campo select,.form-grid .campo input,.form-grid .campo textarea{width:100%;min-width:0}
+.modal footer{padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+.aviso{margin:0 22px;padding:10px 12px;border-radius:8px;font-size:12.5px;display:none}
+.aviso.err{display:block;background:#fbeaea;color:var(--alta)}
+.toast{
+  position:fixed;right:22px;bottom:22px;background:#12303a;color:#fff;padding:12px 18px;
+  border-radius:10px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;
+  transform:translateY(10px);transition:.25s;z-index:60;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+footer.pie{text-align:center;color:var(--muted);font-size:12px;padding:10px 0 0}
+
+@media (max-width:1100px){.charts{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}}
+@media (max-width:680px){.charts,.kpis{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div>
+    <h1>Tablero de Incidencias de Vehículos Eléctricos</h1>
+    <div class="sub">Operación y mantenimiento de flota &middot; Monitoreo en tiempo real</div>
+  </div>
+  <div class="badge-conn"><span class="dot"></span><span id="estado-conexion">Verificando conexión…</span></div>
+</header>
+
+<main>
+
+  <!-- ===================== INDICADORES ===================== -->
+  <section class="kpis">
+    <div class="kpi">
+      <div class="label">Total de incidencias</div>
+      <div class="value" id="kpi-total">–</div>
+      <div class="hint" id="kpi-total-hint">registros en la base de datos</div>
+    </div>
+    <div class="kpi pend">
+      <div class="label">Pendientes</div>
+      <div class="value" id="kpi-pendientes">–</div>
+      <div class="hint" id="kpi-pend-hint">sin iniciar atención</div>
+    </div>
+    <div class="kpi alta">
+      <div class="label">Alta prioridad</div>
+      <div class="value" id="kpi-alta">–</div>
+      <div class="hint" id="kpi-alta-hint">requieren atención inmediata</div>
+    </div>
+    <div class="kpi ok">
+      <div class="label">Solucionadas</div>
+      <div class="value" id="kpi-solucionadas">–</div>
+      <div class="hint" id="kpi-ok-hint">cerradas</div>
+    </div>
+  </section>
+
+  <!-- ===================== GRÁFICOS ===================== -->
+  <section class="charts">
+    <div class="chart-card">
+      <h3>Incidencias por estado</h3>
+      <div class="desc">Distribución del avance en la atención</div>
+      <div id="chart-estado"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Incidencias por prioridad</h3>
+      <div class="desc">Criticidad de los casos reportados</div>
+      <div id="chart-prioridad"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Incidencias por tipo</h3>
+      <div class="desc">Componente o sistema afectado</div>
+      <div id="chart-tipo"></div>
+    </div>
+  </section>
+
+  <!-- ===================== FILTROS ===================== -->
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Filtros de consulta</h2>
+        <div class="desc">Las consultas se resuelven en la base de datos mediante sentencias SQL parametrizadas</div>
+      </div>
+      <button class="btn" id="btn-nueva">+ Registrar nueva incidencia</button>
+    </div>
+    <div class="panel-body">
+      <div class="filtros">
+        <div class="campo">
+          <label for="f-estado">Estado</label>
+          <select id="f-estado">
+            <option value="">Todos</option>
+            <option value="Pendiente">Pendiente</option><option value="En proceso">En proceso</option><option value="Solucionada">Solucionada</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="f-prioridad">Prioridad</label>
+          <select id="f-prioridad">
+            <option value="">Todas</option>
+            <option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="f-tipo">Tipo de incidencia</label>
+          <select id="f-tipo">
+            <option value="">Todos</option>
+            <option value="Batería">Batería</option><option value="Sistema de carga">Sistema de carga</option><option value="Frenos">Frenos</option><option value="Neumáticos">Neumáticos</option><option value="Software">Software</option><option value="Motor eléctrico">Motor eléctrico</option><option value="Carrocería">Carrocería</option><option value="Climatización">Climatización</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="f-q">Búsqueda libre</label>
+          <input type="text" id="f-q" placeholder="Placa, ubicación o descripción">
+        </div>
+        <button class="btn sec" id="btn-limpiar">Limpiar filtros</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TABLA ===================== -->
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Listado de incidencias</h2>
+        <div class="desc" id="resumen-tabla">Cargando…</div>
+      </div>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Vehículo</th><th>Tipo</th><th>Fecha</th>
+            <th>Ubicación</th><th>Prioridad</th><th>Estado</th>
+            <th>Descripción</th><th>Reportó</th><th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="pie">Publicado en GitHub Pages &middot; Versión web del prototipo &middot; El código con Flask + SQLite está en <code>/version-flask</code> &middot; Base de datos: <code>db/incidencias.db</code></footer>
+</main>
+
+<!-- ===================== MODAL DE REGISTRO ===================== -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <header>
+      <h2 id="modal-title">Registrar nueva incidencia</h2>
+      <button class="cerrar" id="btn-cerrar" aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="aviso err" id="aviso"></div>
+    <form id="form-inc">
+      <div class="form-grid">
+        <div class="campo">
+          <label for="i-placa">Vehículo (placa) *</label>
+          <select id="i-placa" required></select>
+        </div>
+        <div class="campo">
+          <label for="i-tipo">Tipo de incidencia *</label>
+          <select id="i-tipo" required>
+            <option value="Batería">Batería</option><option value="Sistema de carga">Sistema de carga</option><option value="Frenos">Frenos</option><option value="Neumáticos">Neumáticos</option><option value="Software">Software</option><option value="Motor eléctrico">Motor eléctrico</option><option value="Carrocería">Carrocería</option><option value="Climatización">Climatización</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="i-fecha">Fecha *</label>
+          <input type="date" id="i-fecha" value="2026-08-19" required>
+        </div>
+        <div class="campo">
+          <label for="i-ubicacion">Ubicación *</label>
+          <input type="text" id="i-ubicacion" placeholder="Ej: Bogotá - Patio Norte" required>
+        </div>
+        <div class="campo">
+          <label for="i-prioridad">Prioridad *</label>
+          <select id="i-prioridad" required>
+            <option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="i-estado">Estado *</label>
+          <select id="i-estado" required>
+            <option value="Pendiente">Pendiente</option><option value="En proceso">En proceso</option><option value="Solucionada">Solucionada</option>
+          </select>
+        </div>
+        <div class="campo full">
+          <label for="i-reporto">Reportado por</label>
+          <input type="text" id="i-reporto" placeholder="Nombre del responsable">
+        </div>
+        <div class="campo full">
+          <label for="i-desc">Descripción</label>
+          <textarea id="i-desc" rows="3" placeholder="Detalle de la falla observada"></textarea>
+        </div>
+      </div>
+      <footer>
+        <button type="button" class="btn sec" id="btn-cancelar">Cancelar</button>
+        <button type="submit" class="btn">Guardar incidencia</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+
+/* ===========================================================
+   CAPA DE DATOS LOCAL (version standalone, sin servidor)
+   Emula los endpoints REST de Flask sobre un almacen local.
+   La version oficial del proyecto usa SQLite a traves de app.py.
+   =========================================================== */
+(function () {
+  const SEMILLA = {"vehiculos": [{"id": 1, "placa": "EVC-101", "marca": "Renault", "modelo": "Kangoo Z.E.", "anio": 2022, "autonomia_km": 270}, {"id": 2, "placa": "EVC-102", "marca": "BYD", "modelo": "e6", "anio": 2023, "autonomia_km": 400}, {"id": 3, "placa": "EVC-103", "marca": "Nissan", "modelo": "Leaf", "anio": 2021, "autonomia_km": 385}, {"id": 4, "placa": "EVC-104", "marca": "Kia", "modelo": "Niro EV", "anio": 2023, "autonomia_km": 455}, {"id": 5, "placa": "EVC-105", "marca": "JAC", "modelo": "iEV7S", "anio": 2022, "autonomia_km": 300}, {"id": 6, "placa": "EVC-106", "marca": "Volvo", "modelo": "FL Electric", "anio": 2024, "autonomia_km": 300}, {"id": 7, "placa": "EVC-107", "marca": "Tesla", "modelo": "Model 3", "anio": 2023, "autonomia_km": 510}, {"id": 8, "placa": "EVC-108", "marca": "Chevrolet", "modelo": "Bolt EUV", "anio": 2022, "autonomia_km": 397}], "incidencias": [{"id": 1, "vehiculo_id": 1, "tipo": "Batería", "fecha": "2026-08-01", "ubicacion": "Bogotá - Patio Norte", "prioridad": "Alta", "estado": "Pendiente", "descripcion": "Caída de SOC del 20% en menos de 40 km de recorrido.", "reportado_por": "Carlos Peña", "placa": "EVC-101", "marca": "Renault", "modelo": "Kangoo Z.E."}, {"id": 2, "vehiculo_id": 2, "tipo": "Sistema de carga", "fecha": "2026-08-02", "ubicacion": "Medellín - Centro", "prioridad": "Alta", "estado": "En proceso", "descripcion": "El cargador rápido corta la sesión a los 5 minutos.", "reportado_por": "Laura Mejía", "placa": "EVC-102", "marca": "BYD", "modelo": "e6"}, {"id": 3, "vehiculo_id": 3, "tipo": "Frenos", "fecha": "2026-08-03", "ubicacion": "Cali - Sur", "prioridad": "Media", "estado": "Solucionada", "descripcion": "Ruido en frenado regenerativo; se ajustaron pastillas.", "reportado_por": "Andrés Ruiz", "placa": "EVC-103", "marca": "Nissan", "modelo": "Leaf"}, {"id": 4, "vehiculo_id": 4, "tipo": "Neumáticos", "fecha": "2026-08-04", "ubicacion": "Bogotá - Patio Sur", "prioridad": "Baja", "estado": "Solucionada", "descripcion": "Presión baja en llanta trasera derecha; se calibró.", "reportado_por": "Marta Gómez", "placa": "EVC-104", "marca": "Kia", "modelo": "Niro EV"}, {"id": 5, "vehiculo_id": 5, "tipo": "Software", "fecha": "2026-08-05", "ubicacion": "Barranquilla - Puerto", "prioridad": "Media", "estado": "Pendiente", "descripcion": "La pantalla de infoentretenimiento se reinicia sola.", "reportado_por": "Julián Ortiz", "placa": "EVC-105", "marca": "JAC", "modelo": "iEV7S"}, {"id": 6, "vehiculo_id": 6, "tipo": "Motor eléctrico", "fecha": "2026-08-06", "ubicacion": "Medellín - Norte", "prioridad": "Alta", "estado": "Pendiente", "descripcion": "Pérdida de potencia en pendientes y código de falla P0A3F.", "reportado_por": "Laura Mejía", "placa": "EVC-106", "marca": "Volvo", "modelo": "FL Electric"}, {"id": 7, "vehiculo_id": 7, "tipo": "Climatización", "fecha": "2026-08-07", "ubicacion": "Bogotá - Patio Norte", "prioridad": "Baja", "estado": "En proceso", "descripcion": "Aire acondicionado no enfría al máximo.", "reportado_por": "Carlos Peña", "placa": "EVC-107", "marca": "Tesla", "modelo": "Model 3"}, {"id": 8, "vehiculo_id": 8, "tipo": "Carrocería", "fecha": "2026-08-08", "ubicacion": "Cali - Sur", "prioridad": "Baja", "estado": "Solucionada", "descripcion": "Rayón en puerta lateral izquierda; se hizo retoque.", "reportado_por": "Andrés Ruiz", "placa": "EVC-108", "marca": "Chevrolet", "modelo": "Bolt EUV"}, {"id": 9, "vehiculo_id": 1, "tipo": "Sistema de carga", "fecha": "2026-08-09", "ubicacion": "Bogotá - Patio Sur", "prioridad": "Alta", "estado": "En proceso", "descripcion": "Puerto de carga AC no reconoce el conector Tipo 2.", "reportado_por": "Marta Gómez", "placa": "EVC-101", "marca": "Renault", "modelo": "Kangoo Z.E."}, {"id": 10, "vehiculo_id": 2, "tipo": "Software", "fecha": "2026-08-10", "ubicacion": "Medellín - Centro", "prioridad": "Media", "estado": "Solucionada", "descripcion": "Actualización OTA fallida; se reinstaló firmware 4.2.1.", "reportado_por": "Julián Ortiz", "placa": "EVC-102", "marca": "BYD", "modelo": "e6"}, {"id": 11, "vehiculo_id": 3, "tipo": "Batería", "fecha": "2026-08-11", "ubicacion": "Barranquilla - Puerto", "prioridad": "Alta", "estado": "Pendiente", "descripcion": "Celda con desbalance detectado por el BMS.", "reportado_por": "Laura Mejía", "placa": "EVC-103", "marca": "Nissan", "modelo": "Leaf"}, {"id": 12, "vehiculo_id": 4, "tipo": "Frenos", "fecha": "2026-08-12", "ubicacion": "Bogotá - Patio Norte", "prioridad": "Media", "estado": "En proceso", "descripcion": "Pedal con recorrido largo; pendiente purga del sistema.", "reportado_por": "Carlos Peña", "placa": "EVC-104", "marca": "Kia", "modelo": "Niro EV"}, {"id": 13, "vehiculo_id": 5, "tipo": "Neumáticos", "fecha": "2026-08-13", "ubicacion": "Cali - Sur", "prioridad": "Media", "estado": "Pendiente", "descripcion": "Desgaste irregular en el eje delantero.", "reportado_por": "Andrés Ruiz", "placa": "EVC-105", "marca": "JAC", "modelo": "iEV7S"}, {"id": 14, "vehiculo_id": 6, "tipo": "Climatización", "fecha": "2026-08-14", "ubicacion": "Medellín - Norte", "prioridad": "Baja", "estado": "Solucionada", "descripcion": "Filtro de cabina saturado; se reemplazó.", "reportado_por": "Marta Gómez", "placa": "EVC-106", "marca": "Volvo", "modelo": "FL Electric"}, {"id": 15, "vehiculo_id": 7, "tipo": "Motor eléctrico", "fecha": "2026-08-15", "ubicacion": "Bogotá - Patio Sur", "prioridad": "Alta", "estado": "En proceso", "descripcion": "Vibración anormal del inversor sobre los 80 km/h.", "reportado_por": "Julián Ortiz", "placa": "EVC-107", "marca": "Tesla", "modelo": "Model 3"}, {"id": 16, "vehiculo_id": 8, "tipo": "Sistema de carga", "fecha": "2026-08-16", "ubicacion": "Barranquilla - Puerto", "prioridad": "Media", "estado": "Pendiente", "descripcion": "Cable de carga con aislamiento dañado.", "reportado_por": "Laura Mejía", "placa": "EVC-108", "marca": "Chevrolet", "modelo": "Bolt EUV"}, {"id": 17, "vehiculo_id": 2, "tipo": "Carrocería", "fecha": "2026-08-17", "ubicacion": "Medellín - Centro", "prioridad": "Baja", "estado": "Pendiente", "descripcion": "Espejo retrovisor derecho flojo.", "reportado_por": "Carlos Peña", "placa": "EVC-102", "marca": "BYD", "modelo": "e6"}, {"id": 18, "vehiculo_id": 7, "tipo": "Software", "fecha": "2026-08-18", "ubicacion": "Bogotá - Patio Norte", "prioridad": "Alta", "estado": "Pendiente", "descripcion": "Falla intermitente del sistema de asistencia al conductor.", "reportado_por": "Andrés Ruiz", "placa": "EVC-107", "marca": "Tesla", "modelo": "Model 3"}]};
+  const CLAVE = 'tablero_incidencias_ev';
+
+  function cargar() {
+    try { const g = localStorage.getItem(CLAVE); if (g) return JSON.parse(g); } catch (e) {}
+    return JSON.parse(JSON.stringify(SEMILLA));
+  }
+  function guardar(d) { try { localStorage.setItem(CLAVE, JSON.stringify(d)); } catch (e) {} }
+
+  let DATOS = cargar();
+  const orden = { 'Alta': 1, 'Media': 2, 'Baja': 3 };
+
+  function agrupar(campo) {
+    const m = {};
+    DATOS.incidencias.forEach(i => { m[i[campo]] = (m[i[campo]] || 0) + 1; });
+    return Object.entries(m).map(([etiqueta, total]) => ({ etiqueta, total }))
+                 .sort((a, b) => b.total - a.total);
+  }
+
+  function responder(obj, status) {
+    return Promise.resolve(new Response(JSON.stringify(obj), {
+      status: status || 200, headers: { 'Content-Type': 'application/json' }
+    }));
+  }
+
+  const fetchReal = window.fetch.bind(window);
+
+  window.fetch = function (url, opciones) {
+    const o = opciones || {};
+    const metodo = (o.method || 'GET').toUpperCase();
+    const u = new URL(String(url), 'http://local/');
+    const ruta = u.pathname;
+
+    if (!ruta.startsWith('/api/')) return fetchReal(url, opciones);
+
+    /* --- GET /api/salud --- */
+    if (ruta === '/api/salud') {
+      return responder({
+        conexion: 'OK', motor: 'Almacen local (modo standalone)',
+        archivo_bd: 'memoria del navegador',
+        registros: { vehiculos: DATOS.vehiculos.length, incidencias: DATOS.incidencias.length }
+      });
+    }
+
+    /* --- GET /api/vehiculos --- */
+    if (ruta === '/api/vehiculos') return responder(DATOS.vehiculos);
+
+    /* --- GET /api/metricas --- */
+    if (ruta === '/api/metricas') {
+      const I = DATOS.incidencias, n = (f) => I.filter(f).length;
+      const total = I.length, sol = n(i => i.estado === 'Solucionada');
+      return responder({
+        total: total,
+        pendientes: n(i => i.estado === 'Pendiente'),
+        en_proceso: n(i => i.estado === 'En proceso'),
+        solucionadas: sol,
+        alta_prioridad: n(i => i.prioridad === 'Alta'),
+        porcentaje_solucion: total ? Math.round(sol * 1000 / total) / 10 : 0
+      });
+    }
+
+    /* --- GET /api/estadisticas --- */
+    if (ruta === '/api/estadisticas') {
+      return responder({
+        por_tipo: agrupar('tipo'), por_estado: agrupar('estado'),
+        por_prioridad: agrupar('prioridad'), por_ubicacion: agrupar('ubicacion')
+      });
+    }
+
+    /* --- /api/incidencias --- */
+    if (ruta === '/api/incidencias' && metodo === 'GET') {
+      const p = u.searchParams;
+      const q = (p.get('q') || '').toLowerCase();
+      let r = DATOS.incidencias.filter(i =>
+        (!p.get('estado')    || i.estado    === p.get('estado')) &&
+        (!p.get('prioridad') || i.prioridad === p.get('prioridad')) &&
+        (!p.get('tipo')      || i.tipo      === p.get('tipo')) &&
+        (!q || (i.placa + ' ' + i.ubicacion + ' ' + (i.descripcion || '')).toLowerCase().includes(q))
+      );
+      r.sort((a, b) => (orden[a.prioridad] - orden[b.prioridad]) || b.fecha.localeCompare(a.fecha));
+      return responder({ total: r.length, incidencias: r });
+    }
+
+    if (ruta === '/api/incidencias' && metodo === 'POST') {
+      const d = JSON.parse(o.body || '{}');
+      const faltan = ['placa','tipo','fecha','ubicacion','prioridad','estado'].filter(c => !d[c]);
+      if (faltan.length) return responder({ error: 'Campos obligatorios faltantes', campos: faltan }, 400);
+      const v = DATOS.vehiculos.find(x => x.placa === d.placa);
+      if (!v) return responder({ error: 'La placa ' + d.placa + ' no existe en la flota' }, 404);
+      const id = DATOS.incidencias.reduce((m, i) => Math.max(m, i.id), 0) + 1;
+      DATOS.incidencias.push({
+        id: id, vehiculo_id: v.id, tipo: d.tipo, fecha: d.fecha,
+        ubicacion: d.ubicacion, prioridad: d.prioridad, estado: d.estado,
+        descripcion: d.descripcion || '', reportado_por: d.reportado_por || '',
+        placa: v.placa, marca: v.marca, modelo: v.modelo
+      });
+      guardar(DATOS);
+      return responder({ mensaje: 'Incidencia registrada', id: id }, 201);
+    }
+
+    const m = ruta.match(/^\/api\/incidencias\/(\d+)$/);
+    if (m) {
+      const id = parseInt(m[1], 10);
+      const idx = DATOS.incidencias.findIndex(i => i.id === id);
+      if (idx < 0) return responder({ error: 'Incidencia no encontrada' }, 404);
+      if (metodo === 'PUT') {
+        const d = JSON.parse(o.body || '{}');
+        if (d.estado)    DATOS.incidencias[idx].estado = d.estado;
+        if (d.prioridad) DATOS.incidencias[idx].prioridad = d.prioridad;
+        guardar(DATOS);
+        return responder({ mensaje: 'Incidencia actualizada', id: id });
+      }
+      if (metodo === 'DELETE') {
+        DATOS.incidencias.splice(idx, 1); guardar(DATOS);
+        return responder({ mensaje: 'Incidencia eliminada', id: id });
+      }
+    }
+
+    return responder({ error: 'Ruta no encontrada' }, 404);
+  };
+
+  /* Boton oculto para restablecer los datos originales: Ctrl + Alt + R */
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'r') {
+      try { localStorage.removeItem(CLAVE); } catch (x) {}
+      location.reload();
+    }
+  });
+})();
+
+</script>
+<script>
+/* ===========================================================
+   Tablero de Incidencias de Vehículos Eléctricos
+   Lógica de front-end: consume la API REST de Flask.
+   =========================================================== */
+
+const API = {
+  incidencias: '/api/incidencias',
+  metricas:    '/api/metricas',
+  estadisticas:'/api/estadisticas',
+  vehiculos:   '/api/vehiculos',
+  salud:       '/api/salud'
+};
+
+const COLOR = {
+  'Alta':'#c94a45', 'Media':'#c98a12', 'Baja':'#2f8f6b',
+  'Pendiente':'#c94a45', 'En proceso':'#c98a12', 'Solucionada':'#2f8f6b'
+};
+const PALETA = ['#0f6e5c','#3a6ea5','#c98a12','#c94a45','#6a5acd','#17997c','#a4632a','#5b7083'];
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------------- Gráfico de dona (SVG) ---------------- */
+function dona(contenedor, datos, colores) {
+  const total = datos.reduce((a, d) => a + d.total, 0);
+  const R = 62, r = 40, cx = 75, cy = 75;
+  let ang = -Math.PI / 2, paths = '';
+
+  if (total === 0) { contenedor.innerHTML = '<p class="vacio">Sin datos</p>'; return; }
+
+  datos.forEach((d, i) => {
+    const frac = d.total / total;
+    const fin = ang + frac * Math.PI * 2;
+    const largo = frac > 0.5 ? 1 : 0;
+    const color = colores[d.etiqueta] || PALETA[i % PALETA.length];
+    if (frac >= 0.9999) {
+      paths += `<circle cx="${cx}" cy="${cy}" r="${(R + r) / 2}" fill="none"
+                 stroke="${color}" stroke-width="${R - r}"/>`;
+    } else {
+      const p = (rad, a) => `${(cx + rad * Math.cos(a)).toFixed(2)},${(cy + rad * Math.sin(a)).toFixed(2)}`;
+      paths += `<path d="M ${p(R, ang)} A ${R} ${R} 0 ${largo} 1 ${p(R, fin)}
+                        L ${p(r, fin)} A ${r} ${r} 0 ${largo} 0 ${p(r, ang)} Z"
+                 fill="${color}"><title>${esc(d.etiqueta)}: ${d.total}</title></path>`;
+    }
+    ang = fin;
+  });
+
+  const leyenda = datos.map((d, i) => {
+    const color = colores[d.etiqueta] || PALETA[i % PALETA.length];
+    const pct = Math.round(d.total * 100 / total);
+    return `<span><i style="background:${color}"></i>${esc(d.etiqueta)} — <b>${d.total}</b> (${pct}%)</span>`;
+  }).join('');
+
+  contenedor.innerHTML = `
+    <div style="display:flex;justify-content:center">
+      <svg viewBox="0 0 150 150" width="160" height="160" role="img"
+           aria-label="Distribución de incidencias">
+        ${paths}
+        <text x="75" y="72" text-anchor="middle" font-size="24" font-weight="700" fill="#1c2530">${total}</text>
+        <text x="75" y="88" text-anchor="middle" font-size="9" fill="#68717d">TOTAL</text>
+      </svg>
+    </div>
+    <div class="legend">${leyenda}</div>`;
+}
+
+/* ---------------- Gráfico de barras horizontales ---------------- */
+function barras(contenedor, datos, colores) {
+  if (!datos.length) { contenedor.innerHTML = '<p class="vacio">Sin datos</p>'; return; }
+  const max = Math.max(...datos.map(d => d.total));
+  contenedor.innerHTML = datos.map((d, i) => {
+    const color = (colores && colores[d.etiqueta]) || PALETA[i % PALETA.length];
+    const ancho = Math.max(4, Math.round(d.total * 100 / max));
+    return `<div class="bar-row">
+              <span title="${esc(d.etiqueta)}">${esc(d.etiqueta)}</span>
+              <span class="bar-track"><span class="bar-fill" style="width:${ancho}%;background:${color}"></span></span>
+              <span class="num">${d.total}</span>
+            </div>`;
+  }).join('');
+}
+
+/* ---------------- Carga de datos ---------------- */
+async function cargarMetricas() {
+  const m = await (await fetch(API.metricas)).json();
+  $('kpi-total').textContent        = m.total;
+  $('kpi-pendientes').textContent   = m.pendientes;
+  $('kpi-alta').textContent         = m.alta_prioridad;
+  $('kpi-solucionadas').textContent = m.solucionadas;
+  $('kpi-pend-hint').textContent    = `${m.en_proceso} adicionales en proceso`;
+  $('kpi-ok-hint').textContent      = `${m.porcentaje_solucion}% de resolución`;
+  $('kpi-alta-hint').textContent    = m.total ? `${Math.round(m.alta_prioridad*100/m.total)}% del total` : '—';
+}
+
+async function cargarGraficos() {
+  const s = await (await fetch(API.estadisticas)).json();
+  dona($('chart-estado'), s.por_estado, COLOR);
+  dona($('chart-prioridad'), s.por_prioridad, COLOR);
+  barras($('chart-tipo'), s.por_tipo, null);
+}
+
+function filtrosActuales() {
+  const p = new URLSearchParams();
+  const estado = $('f-estado').value, prio = $('f-prioridad').value,
+        tipo = $('f-tipo').value, q = $('f-q').value.trim();
+  if (estado) p.set('estado', estado);
+  if (prio)   p.set('prioridad', prio);
+  if (tipo)   p.set('tipo', tipo);
+  if (q)      p.set('q', q);
+  return p;
+}
+
+async function cargarTabla() {
+  const p = filtrosActuales();
+  const r = await (await fetch(`${API.incidencias}?${p}`)).json();
+  const tb = $('tbody');
+
+  $('resumen-tabla').textContent = p.toString()
+    ? `${r.total} incidencia(s) coinciden con los filtros aplicados`
+    : `${r.total} incidencia(s) registradas en total`;
+
+  if (!r.total) {
+    tb.innerHTML = '<tr><td colspan="10" class="vacio">No se encontraron incidencias con los filtros seleccionados.</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = r.incidencias.map(i => `
+    <tr>
+      <td>#${i.id}</td>
+      <td><span class="placa">${esc(i.placa)}</span><br>
+          <span style="color:#68717d;font-size:12px">${esc(i.marca)} ${esc(i.modelo)}</span></td>
+      <td>${esc(i.tipo)}</td>
+      <td>${esc(i.fecha)}</td>
+      <td>${esc(i.ubicacion)}</td>
+      <td><span class="chip ${i.prioridad}">${esc(i.prioridad)}</span></td>
+      <td><span class="chip ${i.estado.replace(' ','')}">${esc(i.estado)}</span></td>
+      <td class="desc">${esc(i.descripcion)}</td>
+      <td>${esc(i.reportado_por)}</td>
+      <td><div class="acciones">
+        ${i.estado !== 'Solucionada'
+          ? `<button class="mini" data-id="${i.id}" data-next="${i.estado === 'Pendiente' ? 'En proceso' : 'Solucionada'}">
+               &rarr; ${i.estado === 'Pendiente' ? 'En proceso' : 'Solucionar'}</button>`
+          : '<span style="color:#68717d;font-size:11.5px">Cerrada</span>'}
+      </div></td>
+    </tr>`).join('');
+
+  tb.querySelectorAll('button.mini').forEach(b => {
+    b.addEventListener('click', () => actualizarEstado(b.dataset.id, b.dataset.next));
+  });
+}
+
+async function actualizarEstado(id, estado) {
+  const res = await fetch(`${API.incidencias}/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({estado})
+  });
+  if (res.ok) { aviso(`Incidencia #${id} actualizada a "${estado}"`); refrescar(); }
+}
+
+async function cargarVehiculos() {
+  const v = await (await fetch(API.vehiculos)).json();
+  $('i-placa').innerHTML = v.map(x =>
+    `<option value="${esc(x.placa)}">${esc(x.placa)} — ${esc(x.marca)} ${esc(x.modelo)}</option>`).join('');
+}
+
+async function verificarConexion() {
+  try {
+    const s = await (await fetch(API.salud)).json();
+    $('estado-conexion').textContent =
+      `BD conectada · ${s.motor} · ${s.registros.incidencias} incidencias / ${s.registros.vehiculos} vehículos`;
+  } catch { $('estado-conexion').textContent = 'Sin conexión a la base de datos'; }
+}
+
+function refrescar() {
+  return Promise.all([cargarMetricas(), cargarGraficos(), cargarTabla(), verificarConexion()]);
+}
+
+/* ---------------- Modal de registro ---------------- */
+function abrirModal()  { $('aviso').classList.remove('err'); $('overlay').classList.add('open'); $('i-ubicacion').focus(); }
+function cerrarModal() { $('overlay').classList.remove('open'); }
+
+function aviso(msg) {
+  const t = $('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+async function guardarIncidencia(ev) {
+  ev.preventDefault();
+  const cuerpo = {
+    placa: $('i-placa').value,
+    tipo: $('i-tipo').value,
+    fecha: $('i-fecha').value,
+    ubicacion: $('i-ubicacion').value,
+    prioridad: $('i-prioridad').value,
+    estado: $('i-estado').value,
+    reportado_por: $('i-reporto').value,
+    descripcion: $('i-desc').value
+  };
+  const res = await fetch(API.incidencias, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(cuerpo)
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const a = $('aviso');
+    a.textContent = data.error + (data.campos ? ': ' + data.campos.join(', ') : '');
+    a.classList.add('err');
+    return;
+  }
+  cerrarModal();
+  $('form-inc').reset();
+  $('i-fecha').valueAsDate = new Date();
+  aviso(`Incidencia #${data.id} registrada en la base de datos`);
+  refrescar();
+}
+
+/* ---------------- Eventos ---------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  ['f-estado','f-prioridad','f-tipo'].forEach(id => $(id).addEventListener('change', cargarTabla));
+  let t; $('f-q').addEventListener('input', () => { clearTimeout(t); t = setTimeout(cargarTabla, 250); });
+  $('btn-limpiar').addEventListener('click', () => {
+    ['f-estado','f-prioridad','f-tipo','f-q'].forEach(id => $(id).value = '');
+    cargarTabla();
+  });
+  $('btn-nueva').addEventListener('click', abrirModal);
+  $('btn-cerrar').addEventListener('click', cerrarModal);
+  $('btn-cancelar').addEventListener('click', cerrarModal);
+  $('overlay').addEventListener('click', e => { if (e.target === $('overlay')) cerrarModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
+  $('form-inc').addEventListener('submit', guardarIncidencia);
+
+  cargarVehiculos();
+  refrescar();
+});
+
+</script>
+</body>
+</html>
