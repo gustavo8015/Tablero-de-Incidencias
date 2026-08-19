@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablero de Incidencias de Vehículos Eléctricos</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+<header class="topbar">
+  <div>
+    <h1>Tablero de Incidencias de Vehículos Eléctricos</h1>
+    <div class="sub">Operación y mantenimiento de flota &middot; Monitoreo en tiempo real</div>
+  </div>
+  <div class="badge-conn"><span class="dot"></span><span id="estado-conexion">Verificando conexión…</span></div>
+</header>
+
+<main>
+
+  <!-- ===================== INDICADORES ===================== -->
+  <section class="kpis">
+    <div class="kpi">
+      <div class="label">Total de incidencias</div>
+      <div class="value" id="kpi-total">–</div>
+      <div class="hint" id="kpi-total-hint">registros en la base de datos</div>
+    </div>
+    <div class="kpi pend">
+      <div class="label">Pendientes</div>
+      <div class="value" id="kpi-pendientes">–</div>
+      <div class="hint" id="kpi-pend-hint">sin iniciar atención</div>
+    </div>
+    <div class="kpi alta">
+      <div class="label">Alta prioridad</div>
+      <div class="value" id="kpi-alta">–</div>
+      <div class="hint" id="kpi-alta-hint">requieren atención inmediata</div>
+    </div>
+    <div class="kpi ok">
+      <div class="label">Solucionadas</div>
+      <div class="value" id="kpi-solucionadas">–</div>
+      <div class="hint" id="kpi-ok-hint">cerradas</div>
+    </div>
+  </section>
+
+  <!-- ===================== GRÁFICOS ===================== -->
+  <section class="charts">
+    <div class="chart-card">
+      <h3>Incidencias por estado</h3>
+      <div class="desc">Distribución del avance en la atención</div>
+      <div id="chart-estado"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Incidencias por prioridad</h3>
+      <div class="desc">Criticidad de los casos reportados</div>
+      <div id="chart-prioridad"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Incidencias por tipo</h3>
+      <div class="desc">Componente o sistema afectado</div>
+      <div id="chart-tipo"></div>
+    </div>
+  </section>
+
+  <!-- ===================== FILTROS ===================== -->
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Filtros de consulta</h2>
+        <div class="desc">Las consultas se resuelven en la base de datos mediante sentencias SQL parametrizadas</div>
+      </div>
+      <button class="btn" id="btn-nueva">+ Registrar nueva incidencia</button>
+    </div>
+    <div class="panel-body">
+      <div class="filtros">
+        <div class="campo">
+          <label for="f-estado">Estado</label>
+          <select id="f-estado">
+            <option value="">Todos</option>
+            {% for e in estados %}<option value="{{ e }}">{{ e }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="f-prioridad">Prioridad</label>
+          <select id="f-prioridad">
+            <option value="">Todas</option>
+            {% for p in prioridades %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="f-tipo">Tipo de incidencia</label>
+          <select id="f-tipo">
+            <option value="">Todos</option>
+            {% for t in tipos %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="f-q">Búsqueda libre</label>
+          <input type="text" id="f-q" placeholder="Placa, ubicación o descripción">
+        </div>
+        <button class="btn sec" id="btn-limpiar">Limpiar filtros</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TABLA ===================== -->
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Listado de incidencias</h2>
+        <div class="desc" id="resumen-tabla">Cargando…</div>
+      </div>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Vehículo</th><th>Tipo</th><th>Fecha</th>
+            <th>Ubicación</th><th>Prioridad</th><th>Estado</th>
+            <th>Descripción</th><th>Reportó</th><th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="pie">Prototipo académico &middot; Flask + SQLite &middot; Base de datos: <code>db/incidencias.db</code></footer>
+</main>
+
+<!-- ===================== MODAL DE REGISTRO ===================== -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <header>
+      <h2 id="modal-title">Registrar nueva incidencia</h2>
+      <button class="cerrar" id="btn-cerrar" aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="aviso err" id="aviso"></div>
+    <form id="form-inc">
+      <div class="form-grid">
+        <div class="campo">
+          <label for="i-placa">Vehículo (placa) *</label>
+          <select id="i-placa" required></select>
+        </div>
+        <div class="campo">
+          <label for="i-tipo">Tipo de incidencia *</label>
+          <select id="i-tipo" required>
+            {% for t in tipos %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="i-fecha">Fecha *</label>
+          <input type="date" id="i-fecha" value="{{ hoy }}" required>
+        </div>
+        <div class="campo">
+          <label for="i-ubicacion">Ubicación *</label>
+          <input type="text" id="i-ubicacion" placeholder="Ej: Bogotá - Patio Norte" required>
+        </div>
+        <div class="campo">
+          <label for="i-prioridad">Prioridad *</label>
+          <select id="i-prioridad" required>
+            {% for p in prioridades %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="i-estado">Estado *</label>
+          <select id="i-estado" required>
+            {% for e in estados %}<option value="{{ e }}">{{ e }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="campo full">
+          <label for="i-reporto">Reportado por</label>
+          <input type="text" id="i-reporto" placeholder="Nombre del responsable">
+        </div>
+        <div class="campo full">
+          <label for="i-desc">Descripción</label>
+          <textarea id="i-desc" rows="3" placeholder="Detalle de la falla observada"></textarea>
+        </div>
+      </div>
+      <footer>
+        <button type="button" class="btn sec" id="btn-cancelar">Cancelar</button>
+        <button type="submit" class="btn">Guardar incidencia</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
