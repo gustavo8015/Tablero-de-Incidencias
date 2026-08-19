@@ -1,0 +1,89 @@
+=== EVIDENCIA DE CONEXION APLICACION <-> BASE DE DATOS ===
+Proyecto: Tablero de Incidencias de Vehiculos Electricos
+Fecha de captura: 2026-08-19 01:32
+
+--- 1) Arranque de la aplicacion (consola de Flask) ---
+Base de datos creada en /root/tablero-incidencias/db/incidencias.db
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+
+--- 2) Archivo fisico de la base de datos ---
+-rw-r--r-- 1 root root 36K Aug 19 01:32 db/incidencias.db
+
+--- 3) Objetos creados en la base ---
+    index -> idx_inc_estado
+    index -> idx_inc_fecha
+    index -> idx_inc_prioridad
+    index -> idx_inc_tipo
+    table -> incidencias
+    table -> vehiculos
+
+--- 4) Conteo de registros (consulta directa a SQLite) ---
+    vehiculos  : 8
+    incidencias: 18
+
+    SELECT estado, COUNT(*) FROM incidencias GROUP BY estado;
+      En proceso   5
+      Pendiente    8
+      Solucionada  5
+
+    SELECT prioridad, COUNT(*) FROM incidencias GROUP BY prioridad;
+      Alta         7
+      Baja         5
+      Media        6
+
+--- 5) GET /api/salud  (endpoint de diagnostico de conexion) ---
+{
+  "archivo_bd": "/root/tablero-incidencias/db/incidencias.db",
+  "conexion": "OK",
+  "motor": "SQLite 3.45.1",
+  "registros": {
+    "incidencias": 18,
+    "vehiculos": 8
+  },
+  "tamano_bytes": 36864
+}
+
+--- 6) GET /api/metricas  (indicadores del tablero) ---
+{
+  "alta_prioridad": 7,
+  "en_proceso": 5,
+  "pendientes": 8,
+  "porcentaje_solucion": 27.8,
+  "solucionadas": 5,
+  "total": 18
+}
+
+--- 7) GET /api/incidencias?estado=Pendiente&prioridad=Alta  (consulta filtrada) ---
+    Coincidencias: 4
+      #18  EVC-107  Software           2026-08-18  Bogotá - Patio Norte
+      #11  EVC-103  Batería            2026-08-11  Barranquilla - Puerto
+      #6   EVC-106  Motor eléctrico    2026-08-06  Medellín - Norte
+      #1   EVC-101  Batería            2026-08-01  Bogotá - Patio Norte
+
+--- 8) POST /api/incidencias  (registro de una nueva incidencia) ---
+{
+  "id": 19,
+  "mensaje": "Incidencia registrada"
+}
+    Total de incidencias tras el INSERT: 19
+
+--- 9) PUT /api/incidencias/19  (actualizacion de estado) ---
+{
+  "id": 19,
+  "mensaje": "Incidencia actualizada"
+}
+
+    Verificacion en la BD ->  (19, 'Frenos', 'En proceso', 'Media')
+
+--- 10) DELETE /api/incidencias/19  (limpieza del registro de prueba) ---
+{
+  "id": 19,
+  "mensaje": "Incidencia eliminada"
+}
+
+    Total final: 18
+
+=== FIN DE LA EVIDENCIA ===
